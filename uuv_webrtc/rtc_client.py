@@ -25,6 +25,7 @@ class RtcClient:
         self,
         local_port: int = 20001,
         server_address: tuple[str, int] = ("127.0.0.1", 20000),
+        frame_size: tuple[int, int] = (1280, 720),
         logger: logging.Logger = None,
     ) -> None:
         """
@@ -42,7 +43,8 @@ class RtcClient:
         self.__server_address = server_address
         self.__udp_socket = self.__initUdpSocket()
 
-        self.__video_stream_receiver = VideoStreamReceiver(self.logger)
+        self.__frame_size = frame_size
+        self.__video_stream_receiver = VideoStreamReceiver(frame_size=self.__frame_size, logger=self.logger)
         self.__pc = self.__initPeerConnection()
         
         # 异步事件循环管理

@@ -24,5 +24,6 @@ if __name__ == "__main__":
         except KeyboardInterrupt:
             pass
         finally:
+            print(client.getFrameSize())
             print("客户端退出")
             cv2.destroyAllWindows()

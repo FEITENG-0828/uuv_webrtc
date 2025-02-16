@@ -18,12 +18,11 @@ class VideoStreamReceiver:
     负责建立连接并接收媒体流
     """
     
-    def __init__(self, frame_size: Tuple[int, int] = (1280, 720), logger: logging.Logger = None):
+    def __init__(self, logger: logging.Logger = None):
         """
         初始化视频流接收器
 
         Args:
-            frame_size (Tuple[int, int], optional): 视频帧的分辨率, 默认(1280, 720)
             logger (logging.Logger, optional): 日志记录器, 默认None
         """
         self.logger = logger or logging.getLogger(__name__)
@@ -31,7 +30,8 @@ class VideoStreamReceiver:
         self.__track: Optional[VideoStreamTrack] = None
         self.__task: Optional[asyncio.Task] = None
         self.__frame_lock = threading.Lock()
-        self.__latest_frame: np.ndarray = np.zeros((frame_size[1], frame_size[0], 3), dtype=np.uint8)
+        self.__frame_size: Optional[Tuple[int, int]] = None
+        self.__latest_frame: Optional[np.ndarray] = None
 
     def __cancelCurrentTask(self) -> None:
         """
@@ -52,14 +52,14 @@ class VideoStreamReceiver:
             self.__track = track
             self.__task = None
 
-    async def start(self) -> None:
+    def start(self) -> None:
         """
         开始接收
         """
         if self.__track is not None and self.__task is None:
             self.__task = asyncio.create_task(self.__processFrames())
 
-    async def stop(self) -> None:
+    def stop(self) -> None:
         """
         停止接收
         """
@@ -70,6 +70,10 @@ class VideoStreamReceiver:
         """
         持续处理视频帧
         """
+        if self.__track:
+            frame = await self.__track.recv()
+            with self.__frame_lock:
+                self.__frame_size = (frame.width, frame.height)
         while self.__track:
             try:
                 frame = await self.__track.recv()
@@ -80,6 +84,16 @@ class VideoStreamReceiver:
                 self.logger.error(f"视频流中断: {e}")
                 break
 
+    def getFrameSize(self) -> Optional[Tuple[int, int]]:
+        """
+        获取视频帧大小
+
+        Returns:
+            Optional[Tuple[int, int]]: 视频帧大小
+        """
+        with self.__frame_lock:
+            return self.__frame_size
+
     def getLatestFrame(self) -> Tuple[bool, np.ndarray]:
         """
         获取最新帧
@@ -89,5 +103,8 @@ class VideoStreamReceiver:
                 - bool: 是否获取成功
                 - np.ndarray: 视频帧（BGR格式）
         """
-        with self.__frame_lock:
-            return self.__latest_frame is not None, self.__latest_frame.copy()
+        if self.__latest_frame is None:
+            return False, None
+        else:
+            with self.__frame_lock:
+                return True, self.__latest_frame.copy()

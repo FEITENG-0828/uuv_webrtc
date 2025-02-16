@@ -8,6 +8,7 @@ import socket
 import json
 import threading
 import numpy as np
+from typing import Optional
 import logging
 
 from aiortc import RTCPeerConnection, RTCSessionDescription
@@ -25,7 +26,6 @@ class RtcClient:
         self,
         local_port: int = 20001,
         server_address: tuple[str, int] = ("127.0.0.1", 20000),
-        frame_size: tuple[int, int] = (1280, 720),
         logger: logging.Logger = None,
     ) -> None:
         """
@@ -43,8 +43,7 @@ class RtcClient:
         self.__server_address = server_address
         self.__udp_socket = self.__initUdpSocket()
 
-        self.__frame_size = frame_size
-        self.__video_stream_receiver = VideoStreamReceiver(frame_size=self.__frame_size, logger=self.logger)
+        self.__video_stream_receiver = VideoStreamReceiver(logger=self.logger)
         self.__pc = self.__initPeerConnection()
         
         # 异步事件循环管理
@@ -97,7 +96,7 @@ class RtcClient:
             state = pc.connectionState
             self.logger.info(f"连接状态变更: {state}")
             if state in ["failed", "closed"]:
-                await self.__video_stream_receiver.stop()
+                self.__video_stream_receiver.stop()
                 
         @pc.on("track")
         def on_track(track):
@@ -165,11 +164,20 @@ class RtcClient:
             )
             
             # 启动视频流和心跳
-            await self.__video_stream_receiver.start()
+            self.__video_stream_receiver.start()
             await self.__startHeartbeat()
             
         except Exception as e:
             self.logger.error(f"客户端运行异常: {e}")
+
+    def getFrameSize(self) -> Optional[tuple[int, int]]:
+        """
+        获取视频帧大小
+
+        Returns:
+            Optional[tuple[int, int]]: 视频帧大小
+        """
+        return self.__video_stream_receiver.getFrameSize()
 
     def getLatestFrame(self) -> tuple[bool, np.ndarray]:
         """
@@ -191,7 +199,7 @@ class RtcClient:
         if self.__udp_socket:
             self.__udp_socket.close()
         # 关闭视频流接收器
-        await self.__video_stream_receiver.stop()
+        self.__video_stream_receiver.stop()
         # 关闭对等连接
         self.__loop.create_task(self.__pc.close())
         # 停止事件循环

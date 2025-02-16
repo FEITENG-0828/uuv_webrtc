@@ -31,9 +31,9 @@ def force_codec(pc: RTCPeerConnection, sender: RTCRtpSender, forced_codec: str) 
     强制使用指定编解码器
     
     Args:
-        pc: WebRTC对等连接对象
-        sender: RTP发送器
-        forced_codec: 强制使用的编解码器名称 (如 "video/H264")
+        pc (RTCPeerConnection): WebRTC对等连接对象
+        sender (RTCRtpSender): RTP发送器
+        forced_codec (str): 强制使用的编解码器名称 (如 "video/H264")
     
     Raises:
         ValueError: 找不到匹配的Transceiver或编解码器时抛出

@@ -40,22 +40,23 @@ class RtcClient:
         # 网络配置
         self.__local_address = (get_host_ip(), local_port)
         self.__server_address = server_address
-        self.__udp_socket = self.__init_udp_socket()
+        self.__udp_socket = self.__initUdpSocket()
 
         self.__video_stream_receiver = VideoStreamReceiver(self.logger)
-        self.__pc = self.__init_peer_connection()
+        self.__pc = self.__initPeerConnection()
         
         # 异步事件循环管理
         self.__loop = asyncio.new_event_loop()
-        self.__client_task = self.__loop.create_task(self.__run_client())
+        self.__client_task = self.__loop.create_task(self.__runClient())
         self.__event_loop_thread = threading.Thread(
-            target=self.__start_event_loop, 
-            daemon=True
+            target=self.__startEventLoop,
+            daemon=True,
+            name="RTC_Client_Event_Loop"
         )
         self.__event_loop_thread.start()
         self.logger.info("客户端初始化完成")
 
-    def __start_event_loop(self):
+    def __startEventLoop(self):
         """
         启动事件循环
         """
@@ -65,7 +66,7 @@ class RtcClient:
         finally:
             self.__loop.close()
 
-    def __init_udp_socket(self) -> socket.socket:
+    def __initUdpSocket(self) -> socket.socket:
         """
         初始化UDP socket
 
@@ -77,7 +78,7 @@ class RtcClient:
         self.logger.info(f"UDP socket已启动 | 地址: {self.__local_address[0]}:{self.__local_address[1]}")
         return sock
 
-    def __init_peer_connection(self) -> RTCPeerConnection:
+    def __initPeerConnection(self) -> RTCPeerConnection:
         """
         初始化WebRTC对等连接
 
@@ -102,11 +103,11 @@ class RtcClient:
             收到视频流处理
             """
             self.logger.info(f"收到视频流: {track.kind}")
-            self.__video_stream_receiver.add_track(track)
+            self.__video_stream_receiver.addTrack(track)
             
         return pc
 
-    async def __exchange_sdp(self) -> RTCSessionDescription:
+    async def __exchangeSdp(self) -> RTCSessionDescription:
         """
         处理SDP交换流程
 
@@ -132,7 +133,7 @@ class RtcClient:
                 self.logger.error(f"网络错误: {e}")
                 await asyncio.sleep(1)
 
-    async def __start_heartbeat(self):
+    async def __startHeartbeat(self):
         """
         维持心跳连接
         """
@@ -144,13 +145,13 @@ class RtcClient:
                 self.logger.error(f"心跳发送失败: {e}")
                 break
 
-    async def __run_client(self):
+    async def __runClient(self):
         """
         主客户端逻辑
         """
         try:
             # SDP协商
-            offer = await self.__exchange_sdp()
+            offer = await self.__exchangeSdp()
             await self.__pc.setRemoteDescription(offer)
             
             # 创建应答
@@ -163,19 +164,19 @@ class RtcClient:
             
             # 启动视频流和心跳
             await self.__video_stream_receiver.start()
-            await self.__start_heartbeat()
+            await self.__startHeartbeat()
             
         except Exception as e:
             self.logger.error(f"客户端运行异常: {e}")
 
-    def get_latest_frame(self) -> tuple[bool, np.ndarray]:
+    def getLatestFrame(self) -> tuple[bool, np.ndarray]:
         """
         获取最新视频帧
 
         Returns:
             tuple[bool, np.ndarray]: 视频帧状态和帧数据
         """
-        return self.__video_stream_receiver.get_latest_frame()
+        return self.__video_stream_receiver.getLatestFrame()
 
     async def close(self):
         """

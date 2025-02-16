@@ -1,3 +1,6 @@
+"""
+服务器测试程序
+"""
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -21,8 +24,8 @@ file_handler.setFormatter(logging.Formatter(
 server_logger.addHandler(file_handler)
 
 if __name__ == "__main__":
-    cap = CvCapture(cam=0, width=1280, height=720, fps=30, logger=server_logger)
-    with RtcServer(cap=cap, port=20000, logger=server_logger) as server:
+    cap = CvCapture(cam=0, frame_size=(1280, 720), fps=30, logger=server_logger)
+    with RtcServer(cap=cap, port=20000, codec="video/VP8", logger=server_logger) as server:
         try:
             while True:
                 time.sleep(1)

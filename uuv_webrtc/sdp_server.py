@@ -18,18 +18,18 @@ class SdpServer:
     负责处理offer/answer交换和ICE候选信息传输
     """
     
-    def __init__(self, udp_port: int, logger: logging.Logger = None):
+    def __init__(self, port: int, logger: logging.Logger = None):
         """初始化SDP信令服务器
 
         Args:
-            udp_port (int): 本地UDP端口
-            logger (logging.Logger): 日志记录器
+            port (int): 本地UDP端口
+            logger (logging.Logger, optional): 日志记录器, 默认None
         """
         self.logger = logger or logging.getLogger(__name__)
 
         # 网络通信配置
         self.__udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.__udp_socket.bind(("0.0.0.0", udp_port))
+        self.__udp_socket.bind(("0.0.0.0", port))
         
         # 连接状态信息（使用锁保证线程安全）
         self.__lock = threading.Lock()
@@ -39,15 +39,15 @@ class SdpServer:
         
         # 启动消息接收线程
         self.__recv_thread = threading.Thread(
-            target=self.__recv_handle, 
+            target=self.__recvHandle, 
             daemon=True,
             name="SDP_Server_Receiver"
         )
         self.__recv_thread.start()
         
-        self.logger.info(f"SDP服务已启动 | 地址：{get_host_ip()} | 端口：{udp_port}")
+        self.logger.info(f"SDP服务已启动 | 地址：{get_host_ip()} | 端口：{port}")
 
-    def set_local_description(self, sdp: str) -> None:
+    def setLocalDescription(self, sdp: str) -> None:
         """设置本地SDP描述（Offer）
 
         Args:
@@ -56,7 +56,7 @@ class SdpServer:
         with self.__lock:
             self.__local_description = sdp
 
-    def get_remote_description(self) -> Optional[str]:
+    def getRemoteDescription(self) -> Optional[str]:
         """获取远端SDP描述（Answer）
 
         Returns:
@@ -65,7 +65,7 @@ class SdpServer:
         with self.__lock:
             return self.__remote_description
 
-    def get_remote_heart_beat(self) -> Optional[float]:
+    def getRemoteHeartBeat(self) -> Optional[float]:
         """获取最后一次心跳时间戳
 
         Returns:
@@ -74,14 +74,14 @@ class SdpServer:
         with self.__lock:
             return self.__remote_heart_beat
 
-    async def wait_remote_description(self) -> None:
+    async def waitRemoteDescription(self) -> None:
         """
         异步等待远端SDP描述就绪
         """
         while self.__remote_description is None:
             await asyncio.sleep(0.1)
 
-    def __recv_handle(self) -> None:
+    def __recvHandle(self) -> None:
         """
         UDP消息处理循环
         """
@@ -99,7 +99,7 @@ class SdpServer:
                             offer = json.dumps({"type": "offer", "sdp": self.__local_description})
                             self.__udp_socket.sendto(offer.encode(), remote_addr)
                         else:
-                            self.clear_connection_info()
+                            self.clearConnectionInfo()
 
                     elif decoded_msg == "heart_beat":
                         # 更新心跳时间
@@ -122,7 +122,7 @@ class SdpServer:
                 self.logger.error(f"接收消息异常: {str(e)}")
                 time.sleep(1)  # 防止错误循环
 
-    def clear_connection_info(self) -> None:
+    def clearConnectionInfo(self) -> None:
         """
         重置所有连接信息
         """

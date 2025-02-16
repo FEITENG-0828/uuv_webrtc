@@ -32,10 +32,10 @@ class RtcServer:
         初始化WebRTC服务器
 
         Args:
-            cap: 视频捕获对象
-            port: 本地sdp信令服务的开放端口
-            codec: 视频编解码器
-            logger: 日志记录器
+            cap (CvCapture): 视频捕获对象
+            port (int, optional): 本地sdp信令服务的开放端口, 默认20000
+            codec (str, optional): 视频编解码器, 默认"video/VP8"
+            logger (logging.Logger, optional): 日志记录器, 默认None
         """
         self.logger = logger or logging.getLogger(__name__)
 
@@ -47,15 +47,16 @@ class RtcServer:
 
         # 异步事件循环管理
         self.__loop = asyncio.new_event_loop()
-        self.__server_task = self.__loop.create_task(self.__run_server())
+        self.__server_task = self.__loop.create_task(self.__runServer())
         self.__event_loop_thread = threading.Thread(
-            target=self.__start_event_loop, 
-            daemon=True
+            target=self.__startEventLoop,
+            daemon=True,
+            name="RTC_Server_Event_Loop"
         )
         self.__event_loop_thread.start()
         self.logger.info("服务器初始化完成")
 
-    def __start_event_loop(self):
+    def __startEventLoop(self):
         """
         启动事件循环
         """
@@ -65,50 +66,50 @@ class RtcServer:
         finally:
             self.__loop.close()
 
-    async def __on_connection_state_change(self, pc: RTCPeerConnection):
+    async def __onConnectionStateChange(self, pc: RTCPeerConnection):
         """
         连接状态变更处理
 
         Args:
-            pc: 对等连接对象
+            pc (RTCPeerConnection): 对等连接对象
         """
         state = pc.connectionState
         self.logger.info(f"连接状态变更: {state}")
         if state in ["failed", "closed"]:
             await pc.close()
-            self.__cleanup_connection(pc)
+            self.__cleanupConnection(pc)
 
-    async def __negotiate_connection(self, pc: RTCPeerConnection):
+    async def __negotiateConnection(self, pc: RTCPeerConnection):
         """
         SDP协商流程
 
         Args:
-            pc: 对等连接对象
+            pc (RTCPeerConnection): 对等连接对象
         """
         offer = await pc.createOffer()
         await pc.setLocalDescription(offer)
-        self.__sdp_server.set_local_description(pc.localDescription.sdp)
+        self.__sdp_server.setLocalDescription(pc.localDescription.sdp)
 
         self.logger.info(f"等待客户端应答...")
-        await self.__sdp_server.wait_remote_description()
+        await self.__sdp_server.waitRemoteDescription()
         
         answer = RTCSessionDescription(
-            sdp=self.__sdp_server.get_remote_description(),
+            sdp=self.__sdp_server.getRemoteDescription(),
             type="answer"
         )
         await pc.setRemoteDescription(answer)
 
-    async def __monitor_connection(self, pc: RTCPeerConnection):
+    async def __monitorConnection(self, pc: RTCPeerConnection):
         """
         连接状态监控
 
         Args:
-            pc: 对等连接对象
+            pc (RTCPeerConnection): 对等连接对象
         """
         try:
             while pc.connectionState not in ["closed", "failed"]:
-                if self.__sdp_server.get_remote_heart_beat():
-                    if time.time() - self.__sdp_server.get_remote_heart_beat() > 5:
+                if self.__sdp_server.getRemoteHeartBeat():
+                    if time.time() - self.__sdp_server.getRemoteHeartBeat() > 5:
                         self.logger.warning("连接超时")
                         await pc.close()
                 else:
@@ -116,9 +117,9 @@ class RtcServer:
                     await pc.close()
                 await asyncio.sleep(1)
         finally:
-            self.__cleanup_connection(pc)
+            self.__cleanupConnection(pc)
 
-    async def __run_server(self):
+    async def __runServer(self):
         """
         主服务器逻辑
         """
@@ -131,10 +132,10 @@ class RtcServer:
                 # 添加视频轨道并设置编解码器
                 sender = pc.addTrack(CvCapStreamTrack(self.__cap, self.logger))
                 force_codec(pc, sender, self.__codec)
-                pc.on("connectionstatechange", lambda: self.__on_connection_state_change(pc))
+                pc.on("connectionstatechange", lambda: self.__onConnectionStateChange(pc))
 
-                await self.__negotiate_connection(pc)
-                await self.__monitor_connection(pc)
+                await self.__negotiateConnection(pc)
+                await self.__monitorConnection(pc)
                 self.logger.info("连接结束")
 
         except asyncio.CancelledError:
@@ -142,16 +143,16 @@ class RtcServer:
         except Exception as e:
             self.logger.error(f"服务器异常: {e}")
 
-    def __cleanup_connection(self, pc: RTCPeerConnection):
+    def __cleanupConnection(self, pc: RTCPeerConnection):
         """
         清理连接资源
 
         Args:
-            pc: 对等连接对象
+            pc (RTCPeerConnection): 对等连接对象
         """
         if pc in self.__pcs:
             self.__pcs.remove(pc)
-        self.__sdp_server.clear_connection_info()
+        self.__sdp_server.clearConnectionInfo()
 
     async def close(self):
         """

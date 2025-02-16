@@ -24,8 +24,8 @@ class CvCapStreamTrack(VideoStreamTrack):
         初始化视频流轨道
         
         Args:
-            capture: 视频捕获对象
-            logger: 日志记录器
+            capture (CvCapture): 视频捕获对象
+            logger (logging.Logger, optional): 日志记录器, 默认None
         """
         super().__init__()
         self.logger = logger or logging.getLogger(__name__)
@@ -44,7 +44,7 @@ class CvCapStreamTrack(VideoStreamTrack):
             timestamp, time_base = await self.next_timestamp()
             
             # 获取视频帧
-            success, frame = self.__capture.get_latest_frame()
+            success, frame = self.__capture.getLatestFrame()
             if not success or frame is None:
                 await asyncio.sleep(0.01)
                 return None

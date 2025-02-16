@@ -1,3 +1,6 @@
+"""
+客户端测试程序
+"""
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -12,7 +15,7 @@ if __name__ == "__main__":
     ) as client:
         try:
             while True:
-                success, frame = client.get_latest_frame()
+                success, frame = client.getLatestFrame()
                 if success:
                     cv2.imshow("client", frame)
                     if cv2.waitKey(1) & 0xFF == ord("q"):

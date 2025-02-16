@@ -18,8 +18,7 @@ class CvCapture:
     def __init__(
         self,
         cam: int = 0,
-        width: int = 1280,
-        height: int = 720,
+        frame_size: Tuple[int, int] = (1280, 720),
         fps: int = 30,
         logger: logging.Logger = None
     ) -> None:
@@ -27,39 +26,38 @@ class CvCapture:
         初始化视频捕获设备
         
         Args:
-            cam: 摄像头设备ID
-            width: 捕获宽度
-            height: 捕获高度
-            fps: 目标帧率
-            logger: 日志记录器
+            cam (int, optional): 摄像头设备ID, 默认0
+            frame_size (Tuple[int, int], optional): 捕获分辨率, 默认(1280, 720)
+            fps (int, optional): 目标帧率, 默认30
+            logger (logging.Logger, optional): 日志记录器, 默认None
         """
         self.logger = logger or logging.getLogger(__name__)
 
         self.__cam_id = cam
-        self.__target_size = (width, height)
+        self.__target_size = frame_size
         self.__target_fps = fps
         
         # 视频流参数
         self.__ret = False
-        self.__latest_frame: np.ndarray = np.zeros((height, width, 3), dtype=np.uint8)
+        self.__latest_frame: np.ndarray = np.zeros((frame_size[1], frame_size[0], 3), dtype=np.uint8)
         self.__frame_lock = threading.Lock()
         self.__running = threading.Event()
         self.__running.set()
         
         # 启动捕获线程
         self.__capture_thread = threading.Thread(
-            target=self.__capture_loop,
-            name="CV_Capture_Thread",
+            target=self.__captureLoop,
+            name="CV_Capture_Loop",
             daemon=True
         )
         self.__capture_thread.start()
         
         # 等待初始化完成
-        if not self.__wait_for_camera():
+        if not self.__waitForCamera():
             self.logger.error("摄像头初始化失败")
             raise RuntimeError("摄像头初始化失败")
 
-    def __init_camera(self) -> cv2.VideoCapture:
+    def __initCamera(self) -> cv2.VideoCapture:
         """
         初始化摄像头设备
         
@@ -74,12 +72,12 @@ class CvCapture:
             cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.__target_size[1])
         return cap
 
-    def __capture_loop(self) -> None:
+    def __captureLoop(self) -> None:
         """
         视频采集主循环
         """
         while self.__running.is_set():
-            cap = self.__init_camera()
+            cap = self.__initCamera()
             if not cap.isOpened():
                 self.logger.warning(f"无法打开摄像头 {self.__cam_id}，5秒后重试...")
                 time.sleep(5)
@@ -98,7 +96,7 @@ class CvCapture:
             cap.release()
             time.sleep(1)  # 防止频繁重试
 
-    def __wait_for_camera(self, timeout: float = 5.0) -> bool:
+    def __waitForCamera(self, timeout: float = 5.0) -> bool:
         """
         等待摄像头准备就绪
         
@@ -118,7 +116,7 @@ class CvCapture:
         self.logger.warning("摄像头初始化超时")
         return False
 
-    def get_frame_size(self) -> Tuple[int, int]:
+    def getFrameSize(self) -> Tuple[int, int]:
         """
         获取当前分辨率
         
@@ -127,12 +125,12 @@ class CvCapture:
         """
         return self.__target_size
 
-    def get_latest_frame(self) -> Tuple[bool, np.ndarray]:
+    def getLatestFrame(self) -> Tuple[bool, np.ndarray]:
         """
         获取最新的视频帧
         
         Returns:
-            Tuple[bool, np.ndarray]: 
+            Tuple[bool, np.ndarray]:
                 - bool: 是否获取成功
                 - np.ndarray: 视频帧（BGR格式）
         """

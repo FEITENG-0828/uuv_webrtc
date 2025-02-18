@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[project]
+name = "uuv_webrtc"
+version = "1.0.1"
+authors = [
+    { name="FEITENG", email="wxfeit@163.com" }
+]
+license = { text = "MIT" }
+description = "UUV WebRTC Video Transmission System"
+readme = "README.md"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+requires-python = ">=3.11"
+dependencies = [
+    "aiortc==1.10.1",
+    "opencv-python==4.11.0.86"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/FEITENG-0828/uuv_webrtc"

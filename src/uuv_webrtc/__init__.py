@@ -2,7 +2,7 @@
 实时视频通信系统
 包含WebRTC核心功能、信令服务和计算机视觉集成
 
-版本: 1.0.0
+版本: 1.0.1
 模块组成：
 - video_stream_receiver: 视频流接收
 - rtc_server/rtc_client: WebRTC连接管理
@@ -10,7 +10,7 @@
 - cv_capture: 视频采集处理
 """
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 __all__ = [
     "get_host_ip",
     "CvCapture",

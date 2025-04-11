@@ -7,7 +7,7 @@ where = ["src"]
 
 [project]
 name = "uuv_webrtc"
-version = "1.0.1"
+version = "1.0.2"
 authors = [
     { name="FEITENG", email="wxfeit@163.com" }
 ]
@@ -19,10 +19,23 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
-requires-python = ">=3.11"
+requires-python = ">=3.9"
 dependencies = [
+    "aioice==0.9.0",
     "aiortc==1.10.1",
-    "opencv-python==4.11.0.86"
+    "av==13.1.0",
+    "cffi==1.17.1",
+    "cryptography==44.0.1",
+    "dnspython==2.7.0",
+    "google-crc32c==1.6.0",
+    "ifaddr==0.2.0",
+    "numpy==2.2.3",
+    "opencv-python==4.11.0.86",
+    "pycparser==2.22",
+    "pyee==12.1.1",
+    "pylibsrtp==0.11.0",
+    "pyOpenSSL==25.0.0",
+    "typing_extensions==4.12.2"
 ]
 
 [project.urls]

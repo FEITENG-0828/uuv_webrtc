@@ -15,6 +15,10 @@
 pip install -r requirements.txt
 ```
 
+> **注意：**
+> - 本项目仅在`Python 3.10.8`,`Python 3.11.0`,`Python 3.12.3`进行测试可以正常运行，但不保证其他Python版本有效
+> - 打包上传后使用`pip install uuv_webrtc`安装时采用了严格版本依赖
+
 ### 测试
 1. 启动服务器：
 ```bash
@@ -44,4 +48,4 @@ python test/client.py
 MIT License
 
 ## 版权
-Copyright © 2025 FEITENG, All rights reserved
+Copyright © 2025 [FEITENG](https://github.com/FEITENG-0828), All rights reserved
